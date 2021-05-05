@@ -1,19 +1,80 @@
-import React from 'react';
-import foods from './foods.json';
+import React, { Component } from 'react';
+import './App.css';
 import 'bulma/css/bulma.css';
-import FoodBox from "./components/FoodBox"
+import foods from './foods.json';
+import Foodbox from './components/FoodBox';
+import AddFoodForm from './components/AddFoodForm';
+import Search from './components/Search';
+import TodaysFoods from './components/TodaysFoods';
 
-
-function App() {
-  return (
-    <div >
-    <div className="foods-container">
-        {foods.map((food) => {
-          return <FoodBox food={food} />;
-        })}
+class App extends Component {
+  state = {
+    myFoods: [...foods],
+    formRendered: false,
+    searchInput: '',
+    todaysFood: [],
+  };
+  renderForm = (boolean) => {
+    this.setState({ formRendered: boolean });
+  };
+  addFood = (newFood) => {
+    this.setState({ myFoods: [newFood, ...this.state.myFoods] });
+  };
+  getSearchInput = (input) => {
+    this.setState({ searchInput: input });
+  };
+  getTodaysFood = (food) => {
+    if (this.state.todaysFood.some((el) => el.name === food.name)) {
+      const updatedTodaysFood = this.state.todaysFood.map((el) => {
+        if (el.name === food.name) el.quantity += food.quantity;
+        return el;
+      });
+      this.setState({ todaysFood: updatedTodaysFood });
+    } else {
+      this.setState({ todaysFood: [...this.state.todaysFood, food] });
+    }
+  };
+  deleteItem = (index) => {
+    let newTodaysFood = [...this.state.todaysFood];
+    newTodaysFood.splice(index,1);
+    this.setState({todaysFood: newTodaysFood});
+  };
+  render() {
+    return (
+      <div className="App">
+        <h1>
+          IronNutrition
+        </h1>
+        {this.state.formRendered || (
+          <button onClick={() => this.renderForm(true)}>Add new food</button>
+        )}
+        {this.state.formRendered || <Search search={this.getSearchInput} />}
+        <div className="columns">
+          <div className="column">
+            {this.state.formRendered ? (
+              <AddFoodForm
+                renderForm={this.renderForm}
+                addFood={this.addFood}
+              />
+            ) : (
+              this.state.myFoods
+                .filter((food) =>
+                  food.name.match(new RegExp(this.state.searchInput, 'i'))
+                )
+                .map((el, i) => (
+                  <Foodbox key={i} food={el} getFood={this.getTodaysFood} />
+                ))
+            )}
+          </div>
+          <div className="column">
+            {this.state.formRendered || (
+              <TodaysFoods list={this.state.todaysFood} deleteItem={this.deleteItem} />
+            )}
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 }
 
 export default App;
